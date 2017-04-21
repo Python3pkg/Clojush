@@ -406,7 +406,7 @@
           ;; When true, will exit the run when there is an individual with a zero-error vector
 
           ;;----------------------------------------
-          ;; Arguments related to printing JSON, EDN, or CSV logs
+          ;; Arguments related to printing JSON, EDN, CSV, or Parquet logs
           ;;----------------------------------------
 
           :print-csv-logs false
@@ -445,6 +445,9 @@
 
           :json-log-program-strings false
           ;; If true, JSON logs will include program strings for each individual.
+                    
+          :label nil
+          ;; If set, parquet will save this label as a string as metadata about the run
           )))
 
 (defn load-push-argmap

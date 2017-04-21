@@ -15,7 +15,8 @@
         [clojush pushstate interpreter random util globals]
         clojush.instructions.tag
         clojure.math.numeric-tower)
-    (:require [clojure.string :as string]))
+    (:require [clojure.string :as string]
+              [clojush.pushgp.record :refer [generation-data!]]))
 
 ;; Define test cases
 (defn replace-space-input
@@ -145,12 +146,12 @@
   "Custom generational report."
   [best population generation error-function report-simplifications]
   (let [best-program (not-lazy (:program best))
-        best-test-errors (error-function best-program :test)
+        best-test-errors (generation-data! [:best :test-errors] (error-function best-program :test))
         best-total-test-error (apply +' best-test-errors)]
     (println ";;******************************")
     (printf ";; -*- Replace Space With Newline problem report - generation %s\n" generation)(flush)
     (println "Test total error for best:" best-total-test-error)
-    (println (format "Test mean error for best: %.5f" (double (/ best-total-test-error (count best-test-errors)))))
+    (println (format "Test mean error for best: %.5f" (double (/ best-total-test-error (count best-test-errors))))))
     (when (zero? (:total-error best))
       (doseq [[i error] (map vector
                              (range)
