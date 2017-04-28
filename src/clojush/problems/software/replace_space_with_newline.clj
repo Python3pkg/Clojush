@@ -151,7 +151,9 @@
     (println ";;******************************")
     (printf ";; -*- Replace Space With Newline problem report - generation %s\n" generation)(flush)
     (println "Test total error for best:" best-total-test-error)
-    (println (format "Test mean error for best: %.5f" (double (/ best-total-test-error (count best-test-errors))))))
+    (println (format "Test mean error for best: %.5f"
+               (generation-data! [:best :mean-test-error]
+                 (double (/ best-total-test-error (count best-test-errors))))))
     (when (zero? (:total-error best))
       (doseq [[i error] (map vector
                              (range)

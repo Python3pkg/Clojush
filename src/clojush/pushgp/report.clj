@@ -354,6 +354,7 @@
           (lexicase-report population argmap))
     (when (= total-error-method :ifs) (implicit-fitness-sharing-report population argmap))
     (println (format "--- Best Program (%s) Statistics ---" (str "based on " (name err-fn))))
+    (r/generation-data! [:best :individual] best)
     (println "Best genome:" (print-genome best))
     (println "Best program:" (pr-str (not-lazy (:program best))))
     (when (> report-simplifications 0)
@@ -363,13 +364,14 @@
                                                           report-simplifications 
                                                           false 
                                                           1000))))))
-    (let [errors (r/generation-data! [:best :errors] (not-lazy (:errors best)))]
-      (when print-errors (println "Errors:" errors)))
+    (when print-errors (println "Errors:" (not-lazy (:errors best))))
     (when (and print-errors (not (empty? meta-error-categories)))
       (println "Meta-Errors:" (not-lazy (:meta-errors best))))
     (println "Total:" (:total-error best))
-    (println "Mean:" (float (/ (:total-error best)
-                               (count (:errors best)))))
+    (let [mean (r/generation-data! [:best :mean-error] (float (/ (:total-error best)
+                                                                 (count (:errors best)))))]
+
+      (println "Mean:"))
     (when (not= normalization :none)
       (println "Normalized error:" (:normalized-error best)))
     (case total-error-method
@@ -378,11 +380,12 @@
       :ifs (println "IFS-error:" (:weighted-error best))
       nil)
     (when print-history (println "History:" (not-lazy (:history best))))
-    (println "Genome size:" (count (:genome best)))
-    (println "Size:" (count-points (:program best)))
-    (printf "Percent parens: %.3f\n" 
-            (double (/ (count-parens (:program best)) 
-                       (count-points (:program best))))) ;Number of (open) parens / points
+    (println "Genome size:" (r/generation-data! [:best :genome-size] (count (:genome best))))
+    (println "Size:" (r/generation-data! [:best :program-size] (count-points (:program best))))
+    (printf "Percent parens: %.3f\n"
+            (r/generation-data! [:best :percent-parens]
+              (double (/ (count-parens (:program best))
+                         (count-points (:program best)))))) ;Number of (open) parens / points
     (println "--- Population Statistics ---")
     (when print-cosmos-data
       (println "Cosmos Data:" (let [quants (config/quantiles (count population))]

@@ -3,7 +3,7 @@
                 system implemented in Clojure. See http://pushlanguage.com"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-alpha15"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojars.etosch/cosmos "1.0.0"]
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [org.clojure/math.combinatorics "0.1.1"]
@@ -14,7 +14,7 @@
                  [clj-random "0.1.7"]
                  ;; https://mvnrepository.com/artifact/org.apache.commons/commons-math3
                  [org.apache.commons/commons-math3 "3.2"]
-                 [ici.recorder "0.2.0"]]
+                 [cheshire "5.7.1"]]
   :plugins [[lein-codox "0.9.1"]
             [lein-shell "0.5.0"]
             [lein-gorilla "0.4.0"]
@@ -38,7 +38,6 @@
                   ["change" "version" "leiningen.release/bump-version" "qualifier"]
                   ["shell" "git" "commit" "-am" "Version ${:version} [ci skip]"]
                   ["vcs" "push"]]
-  :aot [clojush.pushgp.record]
 ;;;;;;;;;; jvm settings for high performance, using most of the machine's RAM
 ;  :jvm-opts ~(let [mem-to-use
 ;                   (long (* (.getTotalPhysicalMemorySize

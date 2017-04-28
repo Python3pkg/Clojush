@@ -25,7 +25,7 @@ homedir="/home/${fly_user}"
 rundir="$homedir/runs/$label-$number"
 repodir="$rundir/Clojush"
 outputdir="$rundir/output"
-parquet_uri="${CLOJUSH_PARQUET_URI}"
+parquet_uri="${CLOJUSH_PARQUET_URI:-}"
 ssh ${fly_user}@fly.hampshire.edu "mkdir -p $rundir"
 
 rsync  \

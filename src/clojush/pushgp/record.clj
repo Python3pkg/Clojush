@@ -9,108 +9,75 @@
 ;;; We build up the data we want to send for the generation/run over time
 ;;; and then send it off.
 (ns clojush.pushgp.record
-  (:require [ici-recorder]))
+  (:require [clojure.java.io]
+            [cheshire.core]
+            [cheshire.generate]))
+
+(cheshire.generate/add-encoder
+  clojure.lang.AFunction
+  cheshire.generate/encode-str)
+
+; https://github.com/clojure-cookbook/clojure-cookbook/blob/master/05_network-io/5-09_tcp-client.asciidoc
+(def writer
+  (-> (java.net.Socket. "35.185.102.205" 9990)
+    clojure.java.io/writer))
+;
+; (def generation-writer
+;   (-> (java.net.Socket. "localhost" 9992)
+;     clojure.java.io/writer))
+
+(defn- write-data! [writer data]
+  (cheshire.core/generate-stream data writer)
+  (.newLine writer)
+  (.flush writer))
 
 (def data (atom {}))
 
 
 ;; Stores a configuration options for the run, for the sequence of `ks` and value `v`
 (defn config-data! [ks v]
-  (swap! data assoc-in (cons :configuration ks) v)
+  (swap! data assoc-in (cons :config ks) v)
   v)
 
 ;; called at the begining of a new run.
 ;;
 ;; Resets the state and creates UUID
 (defn new-run! []
-  (reset! data {:uuid (str (java.util.UUID/randomUUID))}))
+  (reset! data {}))
+
+(defn uuid! [uuid]
+  (swap! data assoc :uuid uuid))
 
   ;; commented out until apache spark supports timestamp_millis
   ;; https://github.com/apache/spark/pull/15332
   ; (config-data! [:start-time] (java.time.Instant/now)))
 
-
-(def p-configuration
-  (array-map
-   :problem-file [true :string]
-   :argmap [true [:string false :string]]
-   :initialization-ms [false :long]
-   :registered-instructions [true [true :string]]
-   :versiom-numer [false :string]
-   :git-hash [false :string]))
-
-(def write-support-configuration (ici-recorder/->write-support p-configuration))
-
-
 ;; Records the run configuration with `ici-recorder`
-(defn end-config! []
-  (let [{:keys [configuration uuid]} @data]
-    (ici-recorder/record-run
-      write-support-configuration
-      uuid
-      configuration)))
+(defn end-config! [])
+;   (let [{:keys [configuration uuid]} @data]
+;     (write-data!
+;       config-writer
+;       (assoc configuration :uuid uuid))))
 
 ;; Called at the begining of a generation
 (defn new-generation! [index]
   (swap!
     data
-    (fn [m]
-      (assoc
-        (select-keys m [:uuid])
-        :index index))))
+    assoc
+    :index index
+    :generations {}))
 
 ;; stores some data about the generation
 (defn generation-data! [ks v]
   (swap! data assoc-in (cons :generation ks) v)
   v)
 
-(def p-error :double)
-(def p-errors [true p-error])
-(def p-plush-instruction-map
-  (array-map
-   :instruction [true :string]
-   :uuid [false :string]
-   :random-insertion [false :boolean]
-   :silent [false :boolean]
-   :random-closes [false :integer]
-   :parent-uuid [false :string]))
-(def p-genome [true p-plush-instruction-map])
-
-(def p-individual
-  (array-map
-   :genome [true p-genome]
-   :program [true :string]
-   :errors [false p-errors]
-   :total-error [false p-error]
-   :normalized-error [false p-error]
-   :meta-errors [false p-errors]
-   :history [false p-errors]
-   :ancestors [false [true p-genome]]
-   :uuid [false :string]
-   :parent-uuids [false [true :string]]
-   :genetic-operators [false :string]
-   :is-random-replacement [false :boolean]
-   :age [true :integer]))
-
-(def p-best
-  (array-map
-    :errors [true p-errors]
-    :test-errors [false p-errors]))
-
-(def p-generation
-  (array-map
-   :outcome [true :string]
-   :epsilons [false :double]
-   :population [true [true p-individual]]
-   :best [false p-best]))
-
-(def write-support-generation (ici-recorder/->write-support p-generation))
-
 ;; records the generation with `ici-recorder`
 (defn end-generation! []
-  (let [{:keys [generation uuid index]} @data]
-    (ici-recorder/record-generation
-      write-support-generation
-      uuid
-      index
-      generation)))
+  (let [{:keys [generation uuid index config]} @data]
+    (write-data!
+      writer
+      (assoc generation
+        :config-uuid uuid
+        :index index
+        :config config))))

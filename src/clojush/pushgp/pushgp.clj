@@ -149,7 +149,8 @@
       ;; set globals from parameters
       (reset-globals)
       (initial-report @push-argmap) ;; Print the inital report
-      (print-params (r/config-data! [:argmap] @push-argmap))
+      (r/uuid! (:run-uuid @push-argmap))
+      (print-params (r/config-data! [:argmap] (dissoc @push-argmap :run-uuid)))
       (check-genetic-operator-probabilities-add-to-one @push-argmap)
       (timer @push-argmap :initialization)
       (when (:print-timings @push-argmap)
