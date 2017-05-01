@@ -18,18 +18,32 @@
   cheshire.generate/encode-str)
 
 ; https://github.com/clojure-cookbook/clojure-cookbook/blob/master/05_network-io/5-09_tcp-client.asciidoc
-(def writer
+(def writer (atom nil))
+
+(defn ->writer []
   (-> (java.net.Socket. "35.185.102.205" 9990)
     clojure.java.io/writer))
-;
-; (def generation-writer
-;   (-> (java.net.Socket. "localhost" 9992)
-;     clojure.java.io/writer))
 
-(defn- write-data! [writer data]
-  (cheshire.core/generate-stream data writer)
-  (.newLine writer)
-  (.flush writer))
+(defn set-writer! []
+  (println "SETTING WRITER")
+  (try
+    (reset! writer (->writer))
+    (catch java.net.ConnectException _
+      (Thread/sleep 5000)
+      (set-writer!))))
+
+(set-writer!)
+
+
+(defn- write-data! [data]
+  (try
+    (do
+      (cheshire.core/generate-stream data @writer)        
+      (.newLine @writer)
+      (.flush @writer))
+    (catch java.net.SocketException _
+      (set-writer!)
+      (write-data! data))))
 
 (def data (atom {}))
 
@@ -64,8 +78,9 @@
   (swap!
     data
     assoc
-    :index index
-    :generations {}))
+    :index index))
+    ; :generation {:start-time (java.time.Instant/now)}))
+      
 
 ;; stores some data about the generation
 (defn generation-data! [ks v]
@@ -76,7 +91,6 @@
 (defn end-generation! []
   (let [{:keys [generation uuid index config]} @data]
     (write-data!
-      writer
       (assoc generation
         :config-uuid uuid
         :index index
